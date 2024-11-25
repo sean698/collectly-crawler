@@ -7,7 +7,16 @@
 # useful for handling different item types with a single interface
 from itemadapter import ItemAdapter
 
-
 class TreasureFinderPipeline:
+    def __init__(self):
+        self.items = []
+
     def process_item(self, item, spider):
+        self.items.append(dict(item))
         return item
+    
+    def get_items(self):
+        return self.items
+    
+    def clear_items(self):
+        self.items = []

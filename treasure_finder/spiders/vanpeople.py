@@ -5,7 +5,6 @@ from parsel import Selector
 class VanpeopleSpider(scrapy.Spider):
     name = "vanpeople"
     allowed_domains = ["c.vanpeople.com"]
-    start_urls = [f"https://c.vanpeople.com/zufang/?page={i}" for i in range(1, 6)]
 
     custom_settings = {
         'DEFAULT_REQUEST_HEADERS': {
@@ -18,15 +17,35 @@ class VanpeopleSpider(scrapy.Spider):
         }
     }
 
+    def __init__(self, category='zufang', startPage=1, endPage=5, location='', *args, **kwargs):
+        super(VanpeopleSpider, self).__init__(*args, **kwargs)
+        self.category = category
+        self.startPage = int(startPage)
+        self.endPage = int(endPage)
+        self.location = location
+        self.start_urls = [
+            f"https://c.vanpeople.com/{self.category}/?page={i}" 
+            for i in range(self.startPage, self.endPage + 1)
+        ]
+
     def parse(self, response):
         listings = response.xpath('//li[@class="list" or @class="list "][not(.//div[@class="c-list-pic fl"]//span[text()="推广"])]')
         
         for listing in listings:
+            relative_url = listing.xpath('.//a[@class="c-list-title"]/@href').get(default='')
+            full_url = f"https://c.vanpeople.com{relative_url}" if relative_url else ''
+
+            tips = listing.xpath('.//div[@class="c-list-tips"]//span/text()').getall()
+            location = tips[0].strip() if tips else 'No location'
+            remaining_tips = ' '.join(tips[1:]).strip() if len(tips) > 1 else ''
+            
             item = {
+                'source': 'vanpeople',
                 'title': listing.xpath('.//a[@class="c-list-title"]/text()').get(default='No title').strip(),
-                'url': listing.xpath('.//a[@class="c-list-title"]/@href').get(default=''),
+                'url': full_url,
                 'price': listing.xpath('.//div[@class="c-list-money"]//span[@class="money"]/text()').get(default='No money').strip(),
-                'tips': ' '.join(listing.xpath('.//div[@class="c-list-tips"]//span/text()').getall()).strip(),
+                'location': location,
+                'tips': remaining_tips,
                 'date': listing.xpath('.//div[@class="c-list-contxt-r"]//span[@class="c-list-date"]/text()').get(default='No time').strip()
             }
             yield item
