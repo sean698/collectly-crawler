@@ -11,7 +11,7 @@ BOT_NAME = "treasure_finder"
 
 SPIDER_MODULES = ["treasure_finder.spiders"]
 NEWSPIDER_MODULE = "treasure_finder.spiders"
-
+IGNALS_ENABLED = False
 
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
 USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36'
@@ -66,7 +66,7 @@ ROBOTSTXT_OBEY = False
 # Configure item pipelines
 # See https://docs.scrapy.org/en/latest/topics/item-pipeline.html
 ITEM_PIPELINES = {
-#    "treasure_finder.pipelines.CollectItemsPipeline": 300,
+   'treasure_finder.pipelines.TreasureFinderPipeline': 300,
 }
 
 # Enable and configure the AutoThrottle extension (disabled by default)

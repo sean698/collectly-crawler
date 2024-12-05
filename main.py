@@ -8,13 +8,15 @@ from treasure_finder.spiders.craigslist import CraigslistSpider
 @functions_framework.cloud_event
 def run_spiders(cloud_event):
     message_data = base64.b64decode(cloud_event.data["message"]["data"]).decode('utf-8')
-    print('message_data: ', message_data)
+    try:
+       print('Spider process starting...')
+       process = CrawlerProcess(get_project_settings())
 
-    print('spider process start')
-    process = CrawlerProcess(get_project_settings())
+       process.crawl(VanpeopleSpider)
+       process.crawl(CraigslistSpider)
+       
+       process.start()
+       print('Spider process completed')
+    except Exception as e:
+       print(f"Error in run_spiders: {e}")
 
-    process.crawl(VanpeopleSpider, startPage=1, endPage=3, category='zufang')
-    process.crawl(CraigslistSpider)
-    print('spider process end')
-
-    process.start()

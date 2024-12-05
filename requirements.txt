@@ -1,3 +1,4 @@
 scrapy
 functions-framework
 google-cloud-pubsub
+firebase-admin

@@ -1,2 +1,4 @@
 # Ignore all JSON files
 *.json 
+test.py
+treasure_finder/__pycache__/
