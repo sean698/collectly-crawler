@@ -10,11 +10,14 @@ import firebase_admin
 import os
 import json
 from firebase_admin import credentials, firestore
+from treasure_finder.constants import LOCATION_MAP
+from datetime import datetime, timedelta
 
 class TreasureFinderPipeline:
     def __init__(self):
        self.items = []
        self.initialize_firebase()
+       self.clear_collection()
        
     def initialize_firebase(self):
        try:
@@ -28,14 +31,60 @@ class TreasureFinderPipeline:
            print("Firebase initialized successfully")
        except Exception as e:
            print(f"Firebase initialization error: {e}")
-    def process_item(self, item, spider):
+
+    def clear_collection(self):
         try:
             db = firestore.client()
-            collection_ref = db.collection('rent_listings')
-            source_doc = 'vanpeople' if item.get('source') == 'vanpeople' else 'craigslist'
+            batch_size = 500
+            
+            sources = db.collection('rental_listings').list_documents()
+            
+            for source in sources:
+                listings = source.collection('listings').limit(batch_size).stream()
+                
+                batch = db.batch()
+                count = 0
+                
+                for listing in listings:
+                    batch.delete(listing.reference)
+                    count += 1
+                    
+                    if count >= batch_size:
+                        batch.commit()
+                        batch = db.batch()
+                        count = 0
+                
+                if count > 0:
+                    batch.commit()
+                    
+                source.delete() 
+            print("Successfully cleared rental_listings collection")
+        except Exception as e:
+            print(f"Error clearing collection: {e}")
+
+    def _format_location(self, item):
+        if item.get('source') == 'vanpeople':
+            if item.get('location') in LOCATION_MAP:
+                item['location'] = LOCATION_MAP[item['location']]
+        
+        if item.get('source') == 'craigslist':
+            location = item.get('location', '')
+            for mapped_location in LOCATION_MAP.values():
+                if mapped_location.lower() in location.lower():
+                    item['location'] = mapped_location
+                    break
+            
+        return item
+
+    def process_item(self, item, spider):
+        try:
+            item = self._format_location(item)
+
+            db = firestore.client()
+            collection_ref = db.collection('rental_listings')
+            source_doc = item.get('source')
             listing_ref = collection_ref.document(source_doc).collection('listings').document()
             listing_ref.set(dict(item))
-            print(f"Successfully saved item to rent_listings/{source_doc}/listings: {item}")
             
         except Exception as e:
             print(f"Error saving to Firestore: {e}")
