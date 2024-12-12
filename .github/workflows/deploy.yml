@@ -1,0 +1,36 @@
+name: Deploy to Google Cloud Functions
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v1
+        with:
+          credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
+
+      - name: "Set up Cloud SDK"
+        uses: "google-github-actions/setup-gcloud@v1"
+        with:
+          version: ">= 363.0.0"
+
+      - name: Deploy to Cloud Functions
+        run: |
+          gcloud functions deploy treasure-crawlers \
+            --gen2 \
+            --runtime=python39 \
+            --region=us-central1 \
+            --source=. \
+            --entry-point=run_spiders \
+            --trigger-topic=web-crawling-start \
+            --memory=256MB \
