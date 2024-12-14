@@ -4,6 +4,7 @@ from scrapy.crawler import CrawlerProcess
 from scrapy.utils.project import get_project_settings
 from treasure_finder.spiders.vanpeople import VanpeopleSpider
 from treasure_finder.spiders.craigslist import CraigslistSpider
+from treasure_finder.spiders.kijiji import KijijiSpider
 
 @functions_framework.cloud_event
 def run_spiders(cloud_event):
@@ -14,6 +15,7 @@ def run_spiders(cloud_event):
 
        process.crawl(VanpeopleSpider)
        process.crawl(CraigslistSpider)
+       process.crawl(KijijiSpider)
        
        process.start()
        print('Spider process completed')

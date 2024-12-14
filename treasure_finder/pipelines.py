@@ -14,10 +14,14 @@ from treasure_finder.constants import LOCATION_MAP
 from datetime import datetime, timedelta
 
 class TreasureFinderPipeline:
+    is_initialized = False
+    
     def __init__(self):
-       self.items = []
-       self.initialize_firebase()
-       self.clear_collection()
+        self.items = []
+        if not TreasureFinderPipeline.is_initialized:
+            self.initialize_firebase()
+            self.clear_collection()
+            TreasureFinderPipeline.is_initialized = True
        
     def initialize_firebase(self):
        try:

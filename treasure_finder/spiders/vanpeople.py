@@ -17,7 +17,7 @@ class VanpeopleSpider(scrapy.Spider):
         }
     }
 
-    def __init__(self, category='zufang', startPage=1, endPage=5, location='', *args, **kwargs):
+    def __init__(self, category='zufang', startPage=1, endPage=3, location='', *args, **kwargs):
         super(VanpeopleSpider, self).__init__(*args, **kwargs)
         self.category = category
         self.startPage = int(startPage)
@@ -46,6 +46,7 @@ class VanpeopleSpider(scrapy.Spider):
                 'price': listing.xpath('.//div[@class="c-list-money"]//span[@class="money"]/text()').get(default='No money').strip(),
                 'location': location,
                 'tips': remaining_tips,
-                'date': listing.xpath('.//div[@class="c-list-contxt-r"]//span[@class="c-list-date"]/text()').get(default='No time').strip()
+                'date': listing.xpath('.//div[@class="c-list-contxt-r"]//span[@class="c-list-date"]/text()').get(default='No time').strip(),
+                'imageUrl': listing.xpath('.//div[@class="c-list-pic fl"]//img/@src').get(default='No image')
             }
             yield item

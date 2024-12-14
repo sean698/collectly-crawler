@@ -2,3 +2,4 @@
 *.json 
 test.py
 treasure_finder/__pycache__/
+treasure_finder/spiders/__pycache__/
