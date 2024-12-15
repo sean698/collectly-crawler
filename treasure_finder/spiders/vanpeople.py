@@ -28,6 +28,12 @@ class VanpeopleSpider(scrapy.Spider):
             for i in range(self.startPage, self.endPage + 1)
         ]
 
+    def get_image_url(self, listing):
+        img_url = listing.xpath('.//div[@class="c-list-pic fl"]//img/@data-original').get()
+        if not img_url:
+            img_url = listing.xpath('.//div[@class="c-list-pic fl"]//img/@src').get()
+        return img_url or 'No image'
+
     def parse(self, response):
         listings = response.xpath('//li[@class="list" or @class="list "][not(.//div[@class="c-list-pic fl"]//span[text()="推广"])]')
         
@@ -47,6 +53,6 @@ class VanpeopleSpider(scrapy.Spider):
                 'location': location,
                 'tips': remaining_tips,
                 'date': listing.xpath('.//div[@class="c-list-contxt-r"]//span[@class="c-list-date"]/text()').get(default='No time').strip(),
-                'imageUrl': listing.xpath('.//div[@class="c-list-pic fl"]//img/@src').get(default='No image')
+                'imageUrl': self.get_image_url(listing)
             }
             yield item
