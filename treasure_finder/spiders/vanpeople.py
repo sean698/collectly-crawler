@@ -17,7 +17,7 @@ class VanpeopleSpider(scrapy.Spider):
         }
     }
 
-    def __init__(self, category='zufang', startPage=1, endPage=3, location='', *args, **kwargs):
+    def __init__(self, category='zufang', startPage=1, endPage=4, location='', *args, **kwargs):
         super(VanpeopleSpider, self).__init__(*args, **kwargs)
         self.category = category
         self.startPage = int(startPage)
@@ -35,7 +35,7 @@ class VanpeopleSpider(scrapy.Spider):
         return img_url or 'No image'
 
     def parse(self, response):
-        listings = response.xpath('//li[@class="list" or @class="list "][not(.//div[@class="c-list-pic fl"]//span[text()="推广"])]')
+        listings = response.xpath('//li[@class="list" or @class="list "][not(.//div[@class="c-list-pic fl"]//span[text()="推广"])][not(.//div[@class="c-list-pic fl"]//span[text()="推荐"])]')
         
         for listing in listings:
             relative_url = listing.xpath('.//a[@class="c-list-title"]/@href').get(default='')
@@ -52,7 +52,6 @@ class VanpeopleSpider(scrapy.Spider):
                 'price': listing.xpath('.//div[@class="c-list-money"]//span[@class="money"]/text()').get(default='No money').strip(),
                 'location': location,
                 'tips': remaining_tips,
-                'date': listing.xpath('.//div[@class="c-list-contxt-r"]//span[@class="c-list-date"]/text()').get(default='No time').strip(),
                 'imageUrl': self.get_image_url(listing)
             }
             yield item

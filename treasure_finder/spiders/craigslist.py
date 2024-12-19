@@ -5,7 +5,6 @@ import json
 class CraigslistSpider(scrapy.Spider):
     name = "craigslist"
     allowed_domains = ["vancouver.craigslist.org"]
-    # change the url
     start_urls = ["https://vancouver.craigslist.org/search/apa?format=html"]
 
     def parse(self, response):

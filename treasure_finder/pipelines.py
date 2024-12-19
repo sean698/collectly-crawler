@@ -12,7 +12,7 @@ import json
 from firebase_admin import credentials, firestore
 from treasure_finder.constants import LOCATION_MAP
 from datetime import datetime, timedelta
-
+import base64
 class TreasureFinderPipeline:
     is_initialized = False
     
@@ -20,7 +20,6 @@ class TreasureFinderPipeline:
         self.items = []
         if not TreasureFinderPipeline.is_initialized:
             self.initialize_firebase()
-            self.clear_collection()
             TreasureFinderPipeline.is_initialized = True
        
     def initialize_firebase(self):
@@ -35,36 +34,6 @@ class TreasureFinderPipeline:
            print("Firebase initialized successfully")
        except Exception as e:
            print(f"Firebase initialization error: {e}")
-
-    def clear_collection(self):
-        try:
-            db = firestore.client()
-            batch_size = 500
-            
-            sources = db.collection('rental_listings').list_documents()
-            
-            for source in sources:
-                listings = source.collection('listings').limit(batch_size).stream()
-                
-                batch = db.batch()
-                count = 0
-                
-                for listing in listings:
-                    batch.delete(listing.reference)
-                    count += 1
-                    
-                    if count >= batch_size:
-                        batch.commit()
-                        batch = db.batch()
-                        count = 0
-                
-                if count > 0:
-                    batch.commit()
-                    
-                source.delete() 
-            print("Successfully cleared rental_listings collection")
-        except Exception as e:
-            print(f"Error clearing collection: {e}")
 
     def _format_location(self, item):
         if item.get('source') == 'vanpeople':
@@ -83,12 +52,28 @@ class TreasureFinderPipeline:
     def process_item(self, item, spider):
         try:
             item = self._format_location(item)
-
+            
+            url = item.get('url')
+            if not url:
+                raise ValueError("Item must have a URL")
+                
             db = firestore.client()
             collection_ref = db.collection('rental_listings')
             source_doc = item.get('source')
-            listing_ref = collection_ref.document(source_doc).collection('listings').document()
-            listing_ref.set(dict(item))
+            
+            doc_id = base64.urlsafe_b64encode(url.encode()).decode()
+            listing_ref = collection_ref.document(source_doc).collection('listings').document(doc_id)
+            
+            doc = listing_ref.get()
+            if not doc.exists:
+                data = dict(item)
+                data['createdAt'] = firestore.SERVER_TIMESTAMP
+                data['expiresAt'] = datetime.now() + timedelta(days=7)
+                
+                listing_ref.set(data)
+                print(f"New listing added: {item['title']}")
+            else:
+                print(f"Listing already exists: {item['title']}")
             
         except Exception as e:
             print(f"Error saving to Firestore: {e}")
