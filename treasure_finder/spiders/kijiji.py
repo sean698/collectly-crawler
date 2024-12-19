@@ -17,8 +17,6 @@ class KijijiSpider(scrapy.Spider):
             f"https://www.kijiji.ca/b-apartments-condos/vancouver/page-{i}/c37l1700287?address=Vancouver%2C%20BC&ll=49.2827291%2C-123.1207375&radius={self.radius}"
             for i in range(self.startPage, self.endPage + 1)
         ]
-        self.items = []
-        self.filename = f"kijiji_{datetime.utcnow().isoformat().replace(':', '-')}.json"
 
     def parse(self, response):
         print(f"Parsing URL: {response.url}")
@@ -45,7 +43,7 @@ class KijijiSpider(scrapy.Spider):
                             'bedrooms': item_data.get('numberOfBedrooms'),
                             'bathrooms': item_data.get('numberOfBathroomsTotal'),
                             'size': item_data.get('floorSize', {}).get('value'),
-                            'image': item_data.get('image')
+                            'imageUrl': item_data.get('image')
                         }
                         
                         if item['url']:
@@ -62,7 +60,6 @@ class KijijiSpider(scrapy.Spider):
     def parse_detail(self, response):
         item = response.meta['item']
         item['price'] = response.css('span[itemprop="price"]::text').get()
-        
-        self.items.append(item)
+
         yield item
 
