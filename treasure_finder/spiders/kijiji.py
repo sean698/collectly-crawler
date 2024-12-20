@@ -2,6 +2,7 @@ import scrapy
 import json
 from datetime import datetime
 import re
+from ..constants import LOCATION_MAP
 
 
 class KijijiSpider(scrapy.Spider):
@@ -18,6 +19,16 @@ class KijijiSpider(scrapy.Spider):
             for i in range(self.startPage, self.endPage + 1)
         ]
 
+    def extract_city(self, address):
+        if not address:
+            return address
+            
+        address_lower = address.lower()
+        for city in LOCATION_MAP.values():
+            if city.lower() in address_lower:
+                return city
+        return address
+
     def parse(self, response):
         print(f"Parsing URL: {response.url}")
             
@@ -30,12 +41,17 @@ class KijijiSpider(scrapy.Spider):
                     
                     for listing in listings:
                         item_data = listing.get('item', {})
+                        
+                        # parse location
+                        address = item_data.get('address')
+                        location = self.extract_city(address)
+                        
                         item = {
                             'source': 'kijiji',
                             'title': item_data.get('name'),
                             'description': item_data.get('description'),
                             'url': item_data.get('url'),
-                            'location': item_data.get('address'),
+                            'location': location,
                             'price': None,
                             'bedrooms': float(item_data.get('numberOfBedrooms')) if item_data.get('numberOfBedrooms') else None,
                             'bathrooms': float(item_data.get('numberOfBathroomsTotal')) if item_data.get('numberOfBathroomsTotal') else None,
@@ -54,7 +70,6 @@ class KijijiSpider(scrapy.Spider):
             except (json.JSONDecodeError, ValueError) as e:
                 print(f"Error parsing data: {e}")
 
-    # parse detail page to get price and type
     def parse_detail(self, response):
         item = response.meta['item']
         
@@ -67,4 +82,3 @@ class KijijiSpider(scrapy.Spider):
             item['type'] = type_element.strip()
 
         yield item
-
