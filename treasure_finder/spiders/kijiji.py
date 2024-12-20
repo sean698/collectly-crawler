@@ -8,7 +8,7 @@ class KijijiSpider(scrapy.Spider):
     name = "kijiji"
     allowed_domains = ["kijiji.ca"]
 
-    def __init__(self, startPage=1, endPage=3, radius=30, *args, **kwargs):
+    def __init__(self, startPage=1, endPage=5, radius=30, *args, **kwargs):
         super(KijijiSpider, self).__init__(*args, **kwargs)
         self.startPage = int(startPage)
         self.endPage = int(endPage)
@@ -20,9 +20,6 @@ class KijijiSpider(scrapy.Spider):
 
     def parse(self, response):
         print(f"Parsing URL: {response.url}")
-        
-        with open('kijiji.html', 'w', encoding='utf-8') as file:
-            file.write(response.text)
             
         script_data = response.xpath('//script[@type="application/ld+json"]/text()').get()
         if script_data:
@@ -40,10 +37,11 @@ class KijijiSpider(scrapy.Spider):
                             'url': item_data.get('url'),
                             'location': item_data.get('address'),
                             'price': None,
-                            'bedrooms': item_data.get('numberOfBedrooms'),
-                            'bathrooms': item_data.get('numberOfBathroomsTotal'),
-                            'size': item_data.get('floorSize', {}).get('value'),
-                            'imageUrl': item_data.get('image')
+                            'bedrooms': float(item_data.get('numberOfBedrooms')) if item_data.get('numberOfBedrooms') else None,
+                            'bathrooms': float(item_data.get('numberOfBathroomsTotal')) if item_data.get('numberOfBathroomsTotal') else None,
+                            'size': float(item_data.get('floorSize', {}).get('value')) if item_data.get('floorSize', {}).get('value') else None,
+                            'imageUrl': item_data.get('image'),
+                            'type': None
                         }
                         
                         if item['url']:
@@ -53,13 +51,20 @@ class KijijiSpider(scrapy.Spider):
                                 meta={'item': item}
                             )
                         
-            except json.JSONDecodeError as e:
-                print(f"Error parsing JSON: {e}")
+            except (json.JSONDecodeError, ValueError) as e:
+                print(f"Error parsing data: {e}")
 
-    # parse detail page to get price
+    # parse detail page to get price and type
     def parse_detail(self, response):
         item = response.meta['item']
+        
+        # parse price
         item['price'] = response.css('span[itemprop="price"]::text').get()
+        
+        # parse type
+        type_element = response.css('div[class*="titleAttributes-"] li:first-child span::text').get()
+        if type_element:
+            item['type'] = type_element.strip()
 
         yield item
 

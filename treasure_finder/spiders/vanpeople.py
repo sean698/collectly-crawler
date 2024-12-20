@@ -1,6 +1,7 @@
 import scrapy
 import json
 from parsel import Selector
+import re
 
 class VanpeopleSpider(scrapy.Spider):
     name = "vanpeople"
@@ -17,7 +18,7 @@ class VanpeopleSpider(scrapy.Spider):
         }
     }
 
-    def __init__(self, category='zufang', startPage=1, endPage=4, location='', *args, **kwargs):
+    def __init__(self, category='zufang', startPage=1, endPage=5, location='', *args, **kwargs):
         super(VanpeopleSpider, self).__init__(*args, **kwargs)
         self.category = category
         self.startPage = int(startPage)
@@ -34,6 +35,46 @@ class VanpeopleSpider(scrapy.Spider):
             img_url = listing.xpath('.//div[@class="c-list-pic fl"]//img/@src').get()
         return img_url or 'No image'
 
+    def parse_house_info(self, listing):
+        """Parse house type, bedrooms and bathrooms from listing tips"""
+        tips = listing.xpath('.//div[@class="c-list-tips"]//span/text()').getall()
+        
+        house_info = {
+            'type': None,
+            'bedrooms': None,
+            'bathrooms': None
+        }
+        
+        # Dictionary to map Chinese house types to English
+        type_mapping = {
+            '独立屋': 'House',
+            '连排屋': 'Townhouse',
+            '公寓': 'Apartment',
+            '地下室': 'Basement',
+        }
+        
+        for tip in tips:
+            tip = tip.strip()
+            # Parse house type
+            if tip in type_mapping:
+                house_info['type'] = type_mapping[tip]
+            
+            # Parse bedrooms
+            if '卧' in tip:
+                try:
+                    house_info['bedrooms'] = float(re.search(r'(\d+)卧', tip).group(1))
+                except (AttributeError, ValueError):
+                    pass
+            
+            # Parse bathrooms
+            if '卫' in tip:
+                try:
+                    house_info['bathrooms'] = float(re.search(r'(\d+)卫', tip).group(1))
+                except (AttributeError, ValueError):
+                    pass
+        
+        return house_info
+
     def parse(self, response):
         listings = response.xpath('//li[@class="list" or @class="list "][not(.//div[@class="c-list-pic fl"]//span[text()="推广"])][not(.//div[@class="c-list-pic fl"]//span[text()="推荐"])]')
         
@@ -43,7 +84,9 @@ class VanpeopleSpider(scrapy.Spider):
 
             tips = listing.xpath('.//div[@class="c-list-tips"]//span/text()').getall()
             location = tips[0].strip() if tips else 'No location'
-            remaining_tips = ' '.join(tips[1:]).strip() if len(tips) > 1 else ''
+            
+            # Get house info including type, bedrooms and bathrooms
+            house_info = self.parse_house_info(listing)
             
             item = {
                 'source': 'vanpeople',
@@ -51,7 +94,14 @@ class VanpeopleSpider(scrapy.Spider):
                 'url': full_url,
                 'price': listing.xpath('.//div[@class="c-list-money"]//span[@class="money"]/text()').get(default='No money').strip(),
                 'location': location,
-                'tips': remaining_tips,
-                'imageUrl': self.get_image_url(listing)
+                'imageUrl': self.get_image_url(listing),
+                'type': house_info['type'],
+                'bedrooms': house_info['bedrooms'],
+                'bathrooms': house_info['bathrooms'],
+                'size': None
             }
+
             yield item
+
+
+
