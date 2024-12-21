@@ -71,13 +71,14 @@ class TreasureFinderPipeline:
                 data['expiresAt'] = datetime.now() + timedelta(days=7)
                 
                 listing_ref.set(data)
-                print(f"New listing added: {item['title']}")
+                print(f"New listing added (pipelines): {item['source']}")
             else:
-                print(f"Listing already exists: {item['title']}")
+                print(f"Listing already exists (pipelines)")
             
         except Exception as e:
             print(f"Error saving to Firestore: {e}")
             print(f"Failed item: {item}")
         
         return item
+
     
