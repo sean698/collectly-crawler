@@ -18,7 +18,7 @@ class VanpeopleSpider(scrapy.Spider):
         }
     }
 
-    def __init__(self, category='zufang', startPage=1, endPage=5, location='', *args, **kwargs):
+    def __init__(self, category='zufang', startPage=1, endPage=4, location='', *args, **kwargs):
         super(VanpeopleSpider, self).__init__(*args, **kwargs)
         self.category = category
         self.startPage = int(startPage)

@@ -49,9 +49,20 @@ class TreasureFinderPipeline:
             
         return item
 
+    def _format_price(self, price):
+        if not price:
+            return None
+        try:
+            return int(''.join(c for c in price if c.isdigit())) or 0
+        except:
+            return 0
+
     def process_item(self, item, spider):
         try:
             item = self._format_location(item)
+            
+            if 'price' in item:
+                item['price'] = self._format_price(item['price'])
             
             url = item.get('url')
             if not url:
@@ -59,21 +70,20 @@ class TreasureFinderPipeline:
                 
             db = firestore.client()
             collection_ref = db.collection('rental_listings')
-            source_doc = item.get('source')
             
-            doc_id = base64.urlsafe_b64encode(url.encode()).decode()
-            listing_ref = collection_ref.document(source_doc).collection('listings').document(doc_id)
+            doc_id = f"{item.get('source')}_{base64.urlsafe_b64encode(url.encode()).decode()}"
+            listing_ref = collection_ref.document(doc_id)
             
-            doc = listing_ref.get()
-            if not doc.exists:
-                data = dict(item)
+            data = dict(item)
+            
+            try:
+                listing_ref.update(data)
+                print(f"Updated existing listing: {item['source']}")
+            except:
                 data['createdAt'] = firestore.SERVER_TIMESTAMP
                 data['expiresAt'] = datetime.now() + timedelta(days=7)
-                
                 listing_ref.set(data)
-                print(f"New listing added (pipelines): {item['source']}")
-            else:
-                print(f"Listing already exists (pipelines)")
+                print(f"Created new listing: {item['source']}")
             
         except Exception as e:
             print(f"Error saving to Firestore: {e}")

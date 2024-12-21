@@ -11,7 +11,7 @@ class KijijiSpider(scrapy.Spider):
     name = "kijiji"
     allowed_domains = ["kijiji.ca"]
 
-    def __init__(self, startPage=1, endPage=5, radius=30, *args, **kwargs):
+    def __init__(self, startPage=1, endPage=2, radius=40, *args, **kwargs):
         super(KijijiSpider, self).__init__(*args, **kwargs)
         self.startPage = int(startPage)
         self.endPage = int(endPage)
@@ -32,11 +32,6 @@ class KijijiSpider(scrapy.Spider):
         return address
 
     def parse(self, response):
-        
-        # Get Firestore client
-        db = firestore.client()
-        collection_ref = db.collection('rental_listings')
-            
         script_data = response.xpath('//script[@type="application/ld+json"]/text()').get()
         if script_data:
             data = json.loads(script_data)
@@ -50,38 +45,29 @@ class KijijiSpider(scrapy.Spider):
                     if not url:
                         continue
                         
-                    # Generate document ID same way as pipeline
-                    doc_id = base64.urlsafe_b64encode(url.encode()).decode()
+                    # parse location
+                    address = item_data.get('address')
+                    location = self.extract_city(address)
                     
-                    # Check if listing exists in database
-                    doc = collection_ref.document('kijiji').collection('listings').document(doc_id).get()
+                    item = {
+                        'source': 'kijiji',
+                        'title': item_data.get('name'),
+                        'description': item_data.get('description'),
+                        'url': url,
+                        'location': location,
+                        'price': None,
+                        'bedrooms': float(item_data.get('numberOfBedrooms')) if item_data.get('numberOfBedrooms') else None,
+                        'bathrooms': float(item_data.get('numberOfBathroomsTotal')) if item_data.get('numberOfBathroomsTotal') else None,
+                        'size': float(item_data.get('floorSize', {}).get('value')) if item_data.get('floorSize', {}).get('value') else None,
+                        'imageUrl': item_data.get('image'),
+                        'type': None
+                    }
                     
-                    if not doc.exists:
-                        # parse location
-                        address = item_data.get('address')
-                        location = self.extract_city(address)
-                        
-                        item = {
-                            'source': 'kijiji',
-                            'title': item_data.get('name'),
-                            'description': item_data.get('description'),
-                            'url': url,
-                            'location': location,
-                            'price': None,
-                            'bedrooms': float(item_data.get('numberOfBedrooms')) if item_data.get('numberOfBedrooms') else None,
-                            'bathrooms': float(item_data.get('numberOfBathroomsTotal')) if item_data.get('numberOfBathroomsTotal') else None,
-                            'size': float(item_data.get('floorSize', {}).get('value')) if item_data.get('floorSize', {}).get('value') else None,
-                            'imageUrl': item_data.get('image'),
-                            'type': None
-                        }
-                        
-                        yield scrapy.Request(
-                            url=url,
-                            callback=self.parse_detail,
-                            meta={'item': item}
-                        )
-                    else:
-                        print(f"Listing already exists in database (kijiji)")
+                    yield scrapy.Request(
+                        url=url,
+                        callback=self.parse_detail,
+                        meta={'item': item}
+                    )
 
     def parse_detail(self, response):
         item = response.meta['item']

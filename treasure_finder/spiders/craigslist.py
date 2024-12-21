@@ -51,9 +51,6 @@ class CraigslistSpider(scrapy.Spider):
 
     def parse_detail(self, response):
         item = response.meta['item']
-
-        with open('craigslist_detail.html', 'w', encoding='utf-8') as file:
-            file.write(response.text)
             
         # parse image url
         item['imageUrl'] = response.xpath('//meta[@property="og:image"]/@content').get()
