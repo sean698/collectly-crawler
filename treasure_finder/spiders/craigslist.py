@@ -1,8 +1,8 @@
 import scrapy
 import json
 import re
-import base64
-from firebase_admin import firestore
+import time
+import random
 
 
 class CraigslistSpider(scrapy.Spider):
@@ -13,41 +13,29 @@ class CraigslistSpider(scrapy.Spider):
     def parse(self, response):
         listings = response.xpath('//ol[@class="cl-static-search-results"]/li[position()>1]')
         
-        # Get Firestore client
-        db = firestore.client()
-        collection_ref = db.collection('rental_listings')
-        
         for listing in listings:
             url = listing.xpath('.//a/@href').get(default='')
-            if not url:
-                continue
-                
-            # Generate document ID same way as pipeline
-            doc_id = base64.urlsafe_b64encode(url.encode()).decode()
+            item = {
+                'source': 'craigslist',
+                'title': listing.xpath('@title').get(default='No title'),
+                'url': url,
+                'price': listing.xpath('.//div[@class="price"]/text()').get(default=''),
+                'location': listing.xpath('.//div[@class="location"]/text()').get(default='').strip(),
+                'imageUrl': None,
+                'bedrooms': None,
+                'bathrooms': None,
+                'type': None,
+                'size': None
+            }
             
-            # Check if listing exists in database
-            doc = collection_ref.document('craigslist').collection('listings').document(doc_id).get()
+            # random delay to avoid being blocked
+            time.sleep(random.uniform(1, 2))
             
-            if not doc.exists:
-                item = {
-                    'source': 'craigslist',
-                    'title': listing.xpath('@title').get(default='No title'),
-                    'url': url,
-                    'price': listing.xpath('.//div[@class="price"]/text()').get(default=''),
-                    'location': listing.xpath('.//div[@class="location"]/text()').get(default='').strip(),
-                    'imageUrl': None,
-                    'bedrooms': None,
-                    'bathrooms': None,
-                    'type': None,
-                    'size': None
-                }
-                yield scrapy.Request(
-                    url=url,
-                    callback=self.parse_detail,
-                    meta={'item': item}
-                )
-            else:
-                print(f"Listing already exists in database (craigslist)")
+            yield scrapy.Request(
+                url=url,
+                callback=self.parse_detail,
+                meta={'item': item}
+            )
 
     def parse_detail(self, response):
         item = response.meta['item']

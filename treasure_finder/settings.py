@@ -11,7 +11,7 @@ BOT_NAME = "treasure_finder"
 
 SPIDER_MODULES = ["treasure_finder.spiders"]
 NEWSPIDER_MODULE = "treasure_finder.spiders"
-IGNALS_ENABLED = False
+SIGNALS_ENABLED = False
 
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
 USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36'
@@ -37,7 +37,7 @@ ROBOTSTXT_OBEY = False
 #COOKIES_ENABLED = False
 
 # Disable Telnet Console (enabled by default)
-#TELNETCONSOLE_ENABLED = False
+TELNETCONSOLE_ENABLED = False
 
 # Override the default request headers:
 #DEFAULT_REQUEST_HEADERS = {
@@ -90,9 +90,9 @@ ITEM_PIPELINES = {
 #HTTPCACHE_IGNORE_HTTP_CODES = []
 #HTTPCACHE_STORAGE = "scrapy.extensions.httpcache.FilesystemCacheStorage"
 
-# Set settings whose default value is deprecated to a future-proof value
-# TWISTED_REACTOR = "twisted.internet.asyncioreactor.AsyncioSelectorReactor"
-# TWISTED_REACTOR = "twisted.internet.reactor.Reactor"
+# Disable reactor installation since we don't need it in Cloud Functions
+TWISTED_REACTOR = None
+
 FEED_EXPORT_ENCODING = "utf-8"
 
 FEEDS = {
