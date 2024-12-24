@@ -1,9 +1,7 @@
 import scrapy
 import json
 from datetime import datetime
-import re
 from ..constants import LOCATION_MAP
-import base64
 from firebase_admin import firestore
 
 
@@ -21,16 +19,6 @@ class KijijiSpider(scrapy.Spider):
             for i in range(self.startPage, self.endPage + 1)
         ]
 
-    def extract_city(self, address):
-        if not address:
-            return address
-            
-        address_lower = address.lower()
-        for city in LOCATION_MAP.values():
-            if city.lower() in address_lower:
-                return city
-        return address
-
     def parse(self, response):
         script_data = response.xpath('//script[@type="application/ld+json"]/text()').get()
         if script_data:
@@ -45,16 +33,12 @@ class KijijiSpider(scrapy.Spider):
                     if not url:
                         continue
                         
-                    # parse location
-                    address = item_data.get('address')
-                    location = self.extract_city(address)
-                    
                     item = {
                         'source': 'kijiji',
                         'title': item_data.get('name'),
                         'description': item_data.get('description'),
                         'url': url,
-                        'location': location,
+                        'location': item_data.get('address'),
                         'price': None,
                         'bedrooms': float(item_data.get('numberOfBedrooms')) if item_data.get('numberOfBedrooms') else None,
                         'bathrooms': float(item_data.get('numberOfBathroomsTotal')) if item_data.get('numberOfBathroomsTotal') else None,

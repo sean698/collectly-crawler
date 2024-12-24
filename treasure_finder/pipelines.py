@@ -10,7 +10,7 @@ import firebase_admin
 import os
 import json
 from firebase_admin import credentials, firestore
-from treasure_finder.constants import LOCATION_MAP
+from treasure_finder.constants import LOCATION_MAP, AREA_TO_CITY_MAP
 from datetime import datetime, timedelta
 import base64
 class TreasureFinderPipeline:
@@ -37,16 +37,23 @@ class TreasureFinderPipeline:
 
     def _format_location(self, item):
         if item.get('source') == 'vanpeople':
-            if item.get('location') in LOCATION_MAP:
-                item['location'] = LOCATION_MAP[item['location']]
+            location = item.get('location')
+            if location in LOCATION_MAP:
+                item['location'] = LOCATION_MAP[location]
+            return item
         
-        if item.get('source') == 'craigslist':
-            location = item.get('location', '')
-            for mapped_location in LOCATION_MAP.values():
-                if mapped_location.lower() in location.lower():
-                    item['location'] = mapped_location
-                    break
-            
+        location = item.get('location', '').lower()
+        
+        for mapped_location in LOCATION_MAP.values():
+            if mapped_location.lower() in location:
+                item['location'] = mapped_location
+                return item
+        
+        for city, areas in AREA_TO_CITY_MAP.items():
+            if any(area.lower() in location for area in areas):
+                item['location'] = city
+                return item
+        
         return item
 
     def _format_price(self, price):

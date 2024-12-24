@@ -12,5 +12,17 @@ LOCATION_MAP = {
   '三角洲': 'Delta',
   '枫树岭': 'Maple Ridge',
   '素里': 'Surrey',
+  '阿博斯福': 'Abbotsford',
+  '纳奈莫': 'Nanaimo',
+  '穆迪港': 'Port Moody',
+}
+
+AREA_TO_CITY_MAP = {
+    'Burnaby': ['Brentwood', 'Gilmore', 'Metrotown', 'Highgate', 'Edmonds', 'Lougheed'],
+    'Vancouver': ['Yaletown', 'Gastown', 'Kitsilano', 'West End', 'Mount Pleasant', 'Commercial Drive', 'Waterfront', 'Coal Harbour', 'Grandview-Woodland', 'Tinseltown', 'Oakridge', 'Olympic Village', 'Lonsdale'],
+    'Richmond': ['Steveston', 'Bridgeport', 'Aberdeen'],
+    'Surrey': ['Guildford', 'Fleetwood', 'Whalley', 'Newton', 'King George'],
+    'Coquitlam': ['Maillardville', 'Burquitlam', 'Austin Heights'],
+    'North Vancouver': ['Capilano', 'Grouse Mountain'],
 }
 
