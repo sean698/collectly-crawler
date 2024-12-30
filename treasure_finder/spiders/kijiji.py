@@ -62,6 +62,7 @@ class KijijiSpider(scrapy.Spider):
         # parse type
         type_element = response.css('div[class*="titleAttributes-"] li:first-child span::text').get()
         if type_element:
-            item['type'] = type_element.strip()
+            item_type = type_element.strip()
+            item['type'] = 'Apartment' if item_type == 'Condo' else item_type
 
         yield item
