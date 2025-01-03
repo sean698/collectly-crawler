@@ -59,9 +59,13 @@ TELNETCONSOLE_ENABLED = False
 
 # Enable or disable extensions
 # See https://docs.scrapy.org/en/latest/topics/extensions.html
-#EXTENSIONS = {
-#    "scrapy.extensions.telnet.TelnetConsole": None,
-#}
+EXTENSIONS = {
+    'scrapy.extensions.telnet.TelnetConsole': None,
+    'scrapy.extensions.corestats.CoreStats': None,
+    'scrapy.extensions.memusage.MemoryUsage': None,
+    'scrapy.extensions.logstats.LogStats': None,
+    'scrapy.extensions.spiderstate.SpiderState': None,
+}
 
 # Configure item pipelines
 # See https://docs.scrapy.org/en/latest/topics/item-pipeline.html
