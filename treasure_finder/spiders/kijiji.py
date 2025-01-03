@@ -44,7 +44,10 @@ class KijijiSpider(scrapy.Spider):
                         'bathrooms': float(item_data.get('numberOfBathroomsTotal')) if item_data.get('numberOfBathroomsTotal') else None,
                         'size': float(item_data.get('floorSize', {}).get('value')) if item_data.get('floorSize', {}).get('value') else None,
                         'imageUrl': item_data.get('image'),
-                        'type': None
+                        'type': None,
+                        'furnished': None,
+                        'parking': None,
+                        'aircon': None,
                     }
                     
                     yield scrapy.Request(
@@ -64,5 +67,24 @@ class KijijiSpider(scrapy.Spider):
         if type_element:
             item_type = type_element.strip()
             item['type'] = 'Apartment' if item_type == 'Condo' else item_type
+        
+        # parse facilities from the list items
+        facilities = response.css('li[class^="twoLinesAttribute-"]')
+        for fac in facilities:
+            dt = fac.css('dt::text').get()
+            dd = fac.css('dd::text').get()
+            
+            if not dt or not dd:
+                continue
+                
+            dt = dt.strip()
+            dd = dd.strip()
+            
+            if dt == 'Furnished':
+                item['furnished'] = dd.lower() == 'yes'
+            elif dt == 'Parking Included':
+                item['parking'] = dd != '0'
+            elif dt == 'Air Conditioning':
+                item['aircon'] = dd.lower() == 'yes'
 
         yield item

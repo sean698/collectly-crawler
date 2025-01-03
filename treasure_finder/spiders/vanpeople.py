@@ -18,6 +18,7 @@ class VanpeopleSpider(scrapy.Spider):
         }
     }
 
+    # change end page
     def __init__(self, category='zufang', startPage=1, endPage=4, location='', *args, **kwargs):
         super(VanpeopleSpider, self).__init__(*args, **kwargs)
         self.category = category
@@ -98,10 +99,30 @@ class VanpeopleSpider(scrapy.Spider):
                 'type': house_info['type'],
                 'bedrooms': house_info['bedrooms'],
                 'bathrooms': house_info['bathrooms'],
-                'size': None
+                'size': None,
+                'furnished': None,
+                'parking': None,
+                'aircon': None,
             }
 
-            yield item
+            yield scrapy.Request(
+                url=full_url,
+                callback=self.parse_detail,
+                meta={'item': item}
+            )
 
+    def parse_detail(self, response):
+        item = response.meta['item']
+        
+        # Get all facility items in the device section
+        facilities = response.xpath('//div[contains(@class, "info-detail-device")]//li/p/text()').getall()
+        facilities = [f.strip() for f in facilities if f.strip()]
+        
+        # Check for specific facilities
+        item['furnished'] = '基本家具' in facilities
+        item['parking'] = '独立车位' in facilities
+        item['aircon'] = '中央空调' in facilities
+            
+        yield item
 
 

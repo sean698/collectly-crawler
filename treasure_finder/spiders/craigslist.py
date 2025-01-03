@@ -25,11 +25,14 @@ class CraigslistSpider(scrapy.Spider):
                 'bedrooms': None,
                 'bathrooms': None,
                 'type': None,
-                'size': None
+                'size': None,
+                'aircon': None,
+                'furnished': None,
+                'parking': None,
             }
             
             # random delay to avoid being blocked
-            time.sleep(random.uniform(1, 2))
+            time.sleep(1)
             
             yield scrapy.Request(
                 url=url,
@@ -39,7 +42,6 @@ class CraigslistSpider(scrapy.Spider):
 
     def parse_detail(self, response):
         item = response.meta['item']
-            
         # parse image url
         item['imageUrl'] = response.xpath('//meta[@property="og:image"]/@content').get()
         if not item['imageUrl']:
@@ -84,5 +86,18 @@ class CraigslistSpider(scrapy.Spider):
                 if match:
                     item['size'] = float(match.group(1))
         
+        # parse facilities from the third attrgroup div
+        attrgroup = response.xpath('(//div[@class="attrgroup"])[3]')
+        if attrgroup:
+            # Check for air conditioning
+            item['aircon'] = bool(attrgroup.xpath('.//div[contains(@class, "attr airconditioning")]'))
+            
+            # Check for furnished
+            item['furnished'] = bool(attrgroup.xpath('.//div[contains(@class, "attr is_furnished")]'))
+            
+            # Check for parking
+            parking_link = attrgroup.xpath('.//a[contains(@href, "/search/apa?parking=")]').get()
+            item['parking'] = bool(parking_link and re.search(r'/search/apa\?parking=[123]', parking_link))
+
         yield item
 
